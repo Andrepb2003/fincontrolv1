@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FinControl">
+<title>💰 FinControl - Controle Financeiro</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%236366f1'/><text x='50' y='72' font-size='60' text-anchor='middle'>💰</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #f5f7fb; --card: #ffffff; --text: #1a1d29; --muted: #6b7280;
+    --primary: #6366f1; --primary-dark: #4f46e5; --success: #10b981;
+    --danger: #ef4444; --warning: #f59e0b; --border: #e5e7eb;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  [data-theme="dark"] {
+    --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --muted: #94a3b8;
+    --border: #334155; --shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    transition: background 0.3s, color 0.3s; padding-bottom: 90px;
+  }
+  .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; padding-top: 8px;
+  }
+  .logo { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header-actions { display: flex; gap: 8px; }
+  .theme-btn {
+    background: var(--card); border: none; width: 42px; height: 42px;
+    border-radius: 12px; cursor: pointer; font-size: 1.2rem;
+    box-shadow: var(--shadow); color: var(--text);
+  }
+  .install-btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;
+    border: none; padding: 0 14px; height: 42px; border-radius: 12px;
+    cursor: pointer; font-size: 0.85rem; font-weight: 700;
+    box-shadow: var(--shadow); display: none; align-items: center; gap: 6px;
+  }
+  .balance-card {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white; padding: 24px; border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(99,102,241,0.3); margin-bottom: 16px;
+  }
+  .balance-label { font-size: 0.85rem; opacity: 0.9; margin-bottom: 8px; }
+  .balance-value { font-size: 2rem; font-weight: 800; margin-bottom: 16px; }
+  .balance-stats { display: flex; justify-content: space-between; }
+  .stat { flex: 1; }
+  .stat-label { font-size: 0.75rem; opacity: 0.85; display: flex; align-items: center; gap: 4px; }
+  .stat-value { font-size: 1.1rem; font-weight: 700; margin-top: 4px; }
+  .tip-card {
+    background: var(--card); padding: 16px; border-radius: 16px;
+    box-shadow: var(--shadow); margin-bottom: 16px;
+    border-left: 4px solid var(--warning); display: flex; gap: 12px; align-items: flex-start;
+  }
+  .tip-icon { font-size: 1.5rem; }
+  .tip-text { font-size: 0.9rem; color: var(--text); line-height: 1.4; }
+  .tip-text strong { color: var(--primary); }
+  .install-banner {
+    background: var(--card); padding: 14px 16px; border-radius: 16px;
+    box-shadow: var(--shadow); margin-bottom: 16px;
+    border-left: 4px solid var(--primary); font-size: 0.85rem;
+    display: none; align-items: center; gap: 12px;
+  }
+  .install-banner .ib-icon { font-size: 1.5rem; }
+  .install-banner button {
+    margin-left: auto; background: var(--primary); color: white; border: none;
+    padding: 8px 14px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.8rem;
+  }
+  .section-title {
+    font-size: 1rem; font-weight: 700; margin: 20px 0 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .chart-card {
+    background: var(--card); padding: 16px; border-radius: 16px;
+    box-shadow: var(--shadow); margin-bottom: 16px;
+  }
+  .transactions { display: flex; flex-direction: column; gap: 10px; }
+  .transaction {
+    background: var(--card); padding: 14px; border-radius: 14px;
+    box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .tx-icon {
+    width: 44px; height: 44px; border-radius: 12px; display: flex;
+    align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;
+  }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-title { font-weight: 600; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tx-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .tx-amount { font-weight: 700; font-size: 0.95rem; }
+  .tx-amount.income { color: var(--success); }
+  .tx-amount.expense { color: var(--danger); }
+  .tx-delete {
+    background: transparent; border: none; color: var(--muted);
+    cursor: pointer; padding: 4px; font-size: 1.1rem;
+  }
+  .empty {
+    text-align: center; padding: 40px 20px; color: var(--muted);
+  }
+  .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--card);
+    border-top: 1px solid var(--border); padding: 10px; display: flex;
+    justify-content: space-around; align-items: center; z-index: 100;
+    max-width: 480px; margin: 0 auto;
+  }
+  .nav-btn {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 8px 12px; border-radius: 10px; transition: all 0.2s;
+    font-size: 0.7rem; font-weight: 600;
+  }
+  .nav-btn.active { color: var(--primary); background: rgba(99,102,241,0.1); }
+  .nav-btn span:first-child { font-size: 1.3rem; }
+  .fab {
+    width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white; border: none; font-size: 1.8rem; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(99,102,241,0.5); margin-top: -30px;
+  }
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200;
+    display: none; align-items: flex-end; justify-content: center;
+    animation: fadeIn 0.2s;
+  }
+  .modal.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal-content {
+    background: var(--card); width: 100%; max-width: 480px;
+    border-radius: 24px 24px 0 0; padding: 24px; max-height: 90vh; overflow-y: auto;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .modal-title { font-size: 1.2rem; font-weight: 700; }
+  .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--muted); }
+  .type-switch { display: flex; background: var(--bg); padding: 4px; border-radius: 12px; margin-bottom: 16px; }
+  .type-btn {
+    flex: 1; padding: 10px; border: none; background: transparent; cursor: pointer;
+    border-radius: 10px; font-weight: 600; color: var(--muted); transition: all 0.2s;
+  }
+  .type-btn.active.income { background: var(--success); color: white; }
+  .type-btn.active.expense { background: var(--danger); color: white; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+  .form-input, .form-select {
+    width: 100%; padding: 12px 14px; border: 1px solid var(--border);
+    border-radius: 12px; background: var(--bg); color: var(--text);
+    font-size: 1rem; font-family: inherit;
+  }
+  .form-input:focus, .form-select:focus { outline: none; border-color: var(--primary); }
+  .categories-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px;
+  }
+  .cat-option {
+    aspect-ratio: 1; border: 2px solid var(--border); border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; background: var(--bg); font-size: 0.65rem; padding: 4px;
+    transition: all 0.2s; gap: 2px;
+  }
+  .cat-option.selected { border-color: var(--primary); background: rgba(99,102,241,0.1); }
+  .cat-option span:first-child { font-size: 1.4rem; }
+  .submit-btn {
+    width: 100%; padding: 14px; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white; border: none; border-radius: 14px; font-size: 1rem;
+    font-weight: 700; cursor: pointer; margin-top: 8px;
+    box-shadow: 0 6px 16px rgba(99,102,241,0.4);
+  }
+  .filter-tabs { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+  .filter-tab {
+    padding: 6px 14px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+    color: var(--text); white-space: nowrap;
+  }
+  .filter-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .page { display: none; }
+  .page.active { display: block; }
+  .cat-stat {
+    background: var(--card); padding: 14px; border-radius: 14px;
+    box-shadow: var(--shadow); margin-bottom: 10px;
+  }
+  .cat-stat-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .cat-stat-name { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .cat-stat-bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+  .cat-stat-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 4px; transition: width 0.5s; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">💰 FinControl</div>
+    <div class="header-actions">
+      <button class="install-btn" id="installBtn" onclick="installApp()">📲 Instalar</button>
+      <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <!-- PÁGINA HOME -->
+  <div class="page active" id="page-home">
+    <div class="install-banner" id="installBanner">
+      <span class="ib-icon">📲</span>
+      <span>Instale o FinControl na sua tela inicial para usar como app!</span>
+      <button onclick="installApp()">Instalar</button>
+    </div>
+
+    <div class="balance-card">
+      <div class="balance-label">💼 Saldo Atual</div>
+      <div class="balance-value" id="balance">R$ 0,00</div>
+      <div class="balance-stats">
+        <div class="stat">
+          <div class="stat-label">⬆️ Receitas</div>
+          <div class="stat-value" id="totalIncome">R$ 0,00</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">⬇️ Despesas</div>
+          <div class="stat-value" id="totalExpense">R$ 0,00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip-card">
+      <div class="tip-icon">💡</div>
+      <div class="tip-text" id="tipText">Comece registrando sua primeira receita ou despesa!</div>
+    </div>
+
+    <div class="section-title">📊 Visão Geral</div>
+    <div class="chart-card">
+      <canvas id="mainChart"></canvas>
+    </div>
+
+    <div class="section-title">🕐 Últimas Transações</div>
+    <div class="transactions" id="recentTx"></div>
+  </div>
+
+  <!-- PÁGINA TRANSAÇÕES -->
+  <div class="page" id="page-tx">
+    <div class="section-title">📝 Todas as Transações</div>
+    <div class="filter-tabs">
+      <div class="filter-tab active" data-filter="all" onclick="setFilter('all')">Todas</div>
+      <div class="filter-tab" data-filter="income" onclick="setFilter('income')">Receitas</div>
+      <div class="filter-tab" data-filter="expense" onclick="setFilter('expense')">Despesas</div>
+    </div>
+    <div class="transactions" id="allTx"></div>
+  </div>
+
+  <!-- PÁGINA CATEGORIAS -->
+  <div class="page" id="page-cat">
+    <div class="section-title">🏷️ Gastos por Categoria</div>
+    <div id="catStats"></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('home', this)">
+    <span>🏠</span><span>Início</span>
+  </button>
+  <button class="nav-btn" onclick="showPage('tx', this)">
+    <span>📋</span><span>Histórico</span>
+  </button>
+  <button class="fab" onclick="openModal()">+</button>
+  <button class="nav-btn" onclick="showPage('cat', this)">
+    <span>📊</span><span>Análise</span>
+  </button>
+  <button class="nav-btn" onclick="exportData()">
+    <span>💾</span><span>Exportar</span>
+  </button>
+</nav>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">➕ Nova Transação</div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="type-switch">
+      <button class="type-btn active income" id="btnIncome" onclick="setType('income')">⬆️ Receita</button>
+      <button class="type-btn expense" id="btnExpense" onclick="setType('expense')">⬇️ Despesa</button>
+    </div>
+    <form id="txForm" onsubmit="addTransaction(event)">
+      <div class="form-group">
+        <label class="form-label">Descrição</label>
+        <input type="text" class="form-input" id="desc" placeholder="Ex: Salário, Mercado..." required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valor (R$)</label>
+        <input type="number" class="form-input" id="amount" placeholder="0,00" step="0.01" min="0.01" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Data</label>
+        <input type="date" class="form-input" id="date" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoria</label>
+        <div class="categories-grid" id="catGrid"></div>
+      </div>
+      <button type="submit" class="submit-btn">✓ Salvar Transação</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const CATEGORIES = {
+    income: [
+      { id: 'salary', name: 'Salário', icon: '💼', color: '#10b981' },
+      { id: 'freelance', name: 'Freelance', icon: '💻', color: '#06b6d4' },
+      { id: 'investment', name: 'Investim.', icon: '📈', color: '#8b5cf6' },
+      { id: 'gift', name: 'Presente', icon: '🎁', color: '#ec4899' },
+      { id: 'sale', name: 'Venda', icon: '🛍️', color: '#f59e0b' },
+      { id: 'bonus', name: 'Bônus', icon: '⭐', color: '#eab308' },
+      { id: 'rent_in', name: 'Aluguel', icon: '🏠', color: '#14b8a6' },
+      { id: 'other_in', name: 'Outros', icon: '💰', color: '#6b7280' }
+    ],
+    expense: [
+      { id: 'food', name: 'Alimentação', icon: '🍔', color: '#ef4444' },
+      { id: 'transport', name: 'Transporte', icon: '🚗', color: '#f97316' },
+      { id: 'home', name: 'Moradia', icon: '🏡', color: '#84cc16' },
+      { id: 'health', name: 'Saúde', icon: '⚕️', color: '#06b6d4' },
+      { id: 'education', name: 'Educação', icon: '📚', color: '#3b82f6' },
+      { id: 'leisure', name: 'Lazer', icon: '🎮', color: '#8b5cf6' },
+      { id: 'shopping', name: 'Compras', icon: '🛒', color: '#ec4899' },
+      { id: 'bills', name: 'Contas', icon: '💡', color: '#f59e0b' },
+      { id: 'subscription', name: 'Assinat.', icon: '📺', color: '#a855f7' },
+      { id: 'taxes', name: 'Impostos', icon: '🏛️', color: '#dc2626' },
+      { id: 'pet', name: 'Pet', icon: '🐾', color: '#14b8a6' },
+      { id: 'travel', name: 'Viagem', icon: '✈️', color: '#0ea5e9' },
+      { id: 'other_out', name: 'Outros', icon: '📦', color: '#6b7280' }
+    ]
+  };
+
+  let state = {
+    transactions: JSON.parse(localStorage.getItem('fc_tx') || '[]'),
+    type: 'income',
+    category: null,
+    filter: 'all',
+    theme: localStorage.getItem('fc_theme') || 'light'
+  };
+
+  let chart = null;
+  let deferredPrompt = null;
+
+  // ===== PWA: captura evento de instalação =====
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'flex';
+    if (!localStorage.getItem('fc_installed')) {
+      document.getElementById('installBanner').style.display = 'flex';
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    localStorage.setItem('fc_installed', '1');
+    document.getElementById('installBtn').style.display = 'none';
+    document.getElementById('installBanner').style.display = 'none';
+    deferredPrompt = null;
+  });
+
+  function installApp() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        document.getElementById('installBtn').style.display = 'none';
+        document.getElementById('installBanner').style.display = 'none';
+      });
+    } else {
+      alert('📲 Para instalar:\n\nNo Chrome (Android), toque no menu ⋮ no canto superior e escolha "Adicionar à tela inicial".');
+    }
+  }
+
+  // INIT
+  document.documentElement.setAttribute('data-theme', state.theme);
+  document.getElementById('themeBtn').textContent = state.theme === 'dark' ? '☀️' : '🌙';
+  document.getElementById('date').valueAsDate = new Date();
+  renderCategories();
+  render();
+
+  function toggleTheme() {
+    state.theme = state.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', state.theme);
+    document.getElementById('themeBtn').textContent = state.theme === 'dark' ? '☀️' : '🌙';
+    localStorage.setItem('fc_theme', state.theme);
+    if (chart) renderChart();
+  }
+
+  function showPage(page, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (page === 'cat') renderCatStats();
+  }
+
+  function openModal() {
+    document.getElementById('modal').classList.add('active');
+    document.getElementById('date').valueAsDate = new Date();
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('active');
+    document.getElementById('txForm').reset();
+    document.getElementById('date').valueAsDate = new Date();
+    state.category = null;
+    renderCategories();
+  }
+
+  function setType(type) {
+    state.type = type;
+    state.category = null;
+    document.getElementById('btnIncome').classList.toggle('active', type === 'income');
+    document.getElementById('btnExpense').classList.toggle('active', type === 'expense');
+    renderCategories();
+  }
+
+  function renderCategories() {
+    const grid = document.getElementById('catGrid');
+    grid.innerHTML = CATEGORIES[state.type].map(c => `
+      <div class="cat-option ${state.category === c.id ? 'selected' : ''}" onclick="selectCat('${c.id}')">
+        <span>${c.icon}</span><span>${c.name}</span>
+      </div>
+    `).join('');
+  }
+
+  function selectCat(id) {
+    state.category = id;
+    renderCategories();
+  }
+
+  function addTransaction(e) {
+    e.preventDefault();
+    if (!state.category) { alert('⚠️ Selecione uma categoria!'); return; }
+    const tx = {
+      id: Date.now(),
+      type: state.type,
+      desc: document.getElementById('desc').value,
+      amount: parseFloat(document.getElementById('amount').value),
+      date: document.getElementById('date').value,
+      category: state.category
+    };
+    state.transactions.unshift(tx);
+    save();
+    closeModal();
+    render();
+  }
+
+  function deleteTx(id) {
+    if (!confirm('Excluir esta transação?')) return;
+    state.transactions = state.transactions.filter(t => t.id !== id);
+    save();
+    render();
+  }
+
+  function save() { localStorage.setItem('fc_tx', JSON.stringify(state.transactions)); }
+
+  function getCat(type, id) {
+    return CATEGORIES[type].find(c => c.id === id) || { icon: '📦', name: 'Outros', color: '#6b7280' };
+  }
+
+  function formatBRL(v) {
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function formatDate(d) {
+    const [y, m, day] = d.split('-');
+    return `${day}/${m}/${y}`;
+  }
+
+  function render() {
+    const income = state.transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const expense = state.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const balance = income - expense;
+
+    document.getElementById('balance').textContent = formatBRL(balance);
+    document.getElementById('totalIncome').textContent = formatBRL(income);
+    document.getElementById('totalExpense').textContent = formatBRL(expense);
+
+    renderTip(income, expense, balance);
+    renderRecent();
+    renderAll();
+    renderChart();
+  }
+
+  function renderTip(income, expense, balance) {
+    let tip = '💡 <strong>Dica:</strong> Comece registrando suas receitas e despesas para ter controle total!';
+    if (state.transactions.length > 0) {
+      if (balance < 0) {
+        tip = '⚠️ <strong>Atenção!</strong> Suas despesas superaram as receitas. Revise os gastos por categoria.';
+      } else if (expense > income * 0.8 && income > 0) {
+        tip = '🟡 <strong>Cuidado:</strong> Você gastou mais de 80% da sua receita. Tente economizar 20%!';
+      } else if (income > 0 && expense < income * 0.5) {
+        tip = '🎉 <strong>Excelente!</strong> Você está economizando bem. Que tal investir o excedente?';
+      } else if (income > 0) {
+        tip = '✅ <strong>Bom trabalho!</strong> Suas finanças estão equilibradas. Continue assim!';
+      }
+    }
+    document.getElementById('tipText').innerHTML = tip;
+  }
+
+  function txHTML(t) {
+    const cat = getCat(t.type, t.category);
+    return `
+      <div class="transaction">
+        <div class="tx-icon" style="background:${cat.color}20;color:${cat.color}">${cat.icon}</div>
+        <div class="tx-info">
+          <div class="tx-title">${t.desc}</div>
+          <div class="tx-meta">${cat.name} • ${formatDate(t.date)}</div>
+        </div>
+        <div class="tx-amount ${t.type}">${t.type === 'income' ? '+' : '-'} ${formatBRL(t.amount)}</div>
+        <button class="tx-delete" onclick="deleteTx(${t.id})">🗑️</button>
+      </div>
+    `;
+  }
+
+  function emptyHTML(msg) {
+    return `<div class="empty"><div class="empty-icon">📭</div><div>${msg}</div></div>`;
+  }
+
+  function renderRecent() {
+    const el = document.getElementById('recentTx');
+    const recent = state.transactions.slice(0, 5);
+    el.innerHTML = recent.length ? recent.map(txHTML).join('') : emptyHTML('Nenhuma transação ainda. Toque no + para começar!');
+  }
+
+  function renderAll() {
+    const el = document.getElementById('allTx');
+    let list = state.transactions;
+    if (state.filter !== 'all') list = list.filter(t => t.type === state.filter);
+    el.innerHTML = list.length ? list.map(txHTML).join('') : emptyHTML('Nenhuma transação encontrada.');
+  }
+
+  function setFilter(f) {
+    state.filter = f;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === f));
+    renderAll();
+  }
+
+  function renderChart() {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    const income = state.transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const expense = state.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const textColor = state.theme === 'dark' ? '#f1f5f9' : '#1a1d29';
+
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Receitas', 'Despesas'],
+        datasets: [{
+          data: [income || 0.01, expense || 0.01],
+          backgroundColor: ['#10b981', '#ef4444'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: textColor, padding: 15, font: { size: 13, weight: '600' } } }
+        },
+        cutout: '70%'
+      }
+    });
+  }
+
+  function renderCatStats() {
+    const el = document.getElementById('catStats');
+    const expenses = state.transactions.filter(t => t.type === 'expense');
+    if (!expenses.length) { el.innerHTML = emptyHTML('Sem despesas para analisar ainda.'); return; }
+
+    const totals = {};
+    expenses.forEach(t => { totals[t.category] = (totals[t.category] || 0) + t.amount; });
+    const total = Object.values(totals).reduce((a, b) => a + b, 0);
+    const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+
+    el.innerHTML = sorted.map(([id, val]) => {
+      const cat = getCat('expense', id);
+      const pct = (val / total * 100).toFixed(1);
+      return `
+        <div class="cat-stat">
+          <div class="cat-stat-header">
+            <div class="cat-stat-name"><span>${cat.icon}</span>${cat.name}</div>
+            <div><strong>${formatBRL(val)}</strong> <span style="color:var(--muted);font-size:0.8rem">(${pct}%)</span></div>
+          </div>
+          <div class="cat-stat-bar"><div class="cat-stat-fill" style="width:${pct}%;background:${cat.color}"></div></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function exportData() {
+    if (!state.transactions.length) { alert('Nenhuma transação para exportar!'); return; }
+    let csv = 'Data,Tipo,Descrição,Categoria,Valor\n';
+    state.transactions.forEach(t => {
+      const cat = getCat(t.type, t.category);
+      csv += `${formatDate(t.date)},${t.type === 'income' ? 'Receita' : 'Despesa'},"${t.desc}",${cat.name},${t.amount.toFixed(2)}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `fincontrol_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  }
+
+  // Fecha modal ao clicar fora
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target.id === 'modal') closeModal();
+  });
+
+  // ===== PWA: Manifest embutido (gerado em tempo de execução) =====
+  const manifest = {
+    name: "FinControl - Controle Financeiro",
+    short_name: "FinControl",
+    description: "Controle suas finanças pessoais de forma simples e offline.",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#6366f1",
+    theme_color: "#6366f1",
+    orientation: "portrait",
+    icons: [
+      {
+        src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%236366f1'/><text x='50' y='72' font-size='60' text-anchor='middle'>💰</text></svg>",
+        sizes: "192x192 512x512",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      }
+    ]
+  };
+  const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const manifestURL = URL.createObjectURL(manifestBlob);
+  const linkManifest = document.createElement('link');
+  linkManifest.rel = 'manifest';
+  linkManifest.href = manifestURL;
+  document.head.appendChild(linkManifest);
+
+  // ===== PWA: Service Worker embutido para funcionar OFFLINE =====
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+      const CACHE = 'fincontrol-v1';
+      self.addEventListener('install', e => {
+        self.skipWaiting();
+        e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./'])));
+      });
+      self.addEventListener('activate', e => { self.clients.claim(); });
+      self.addEventListener('fetch', e => {
+        e.respondWith(
+          caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
+            return caches.open(CACHE).then(c => {
+              try { c.put(e.request, resp.clone()); } catch(err){}
+              return resp;
+            });
+          }).catch(() => caches.match('./')))
+        );
+      });
+    `;
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swURL = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swURL).catch(err => console.log('SW falhou:', err));
+  }
+</script>
+</body>
+</html>
